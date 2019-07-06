@@ -43,3 +43,6 @@ def switch(mode: str):
 def main():
   healthy = health_check()
   switch('default' if healthy else 'fallback')
+
+if __name__ == '__main__':
+    main()
