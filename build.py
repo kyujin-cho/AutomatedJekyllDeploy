@@ -39,6 +39,9 @@ def build(branch: str, message: str, backup_branch: str, debug: bool):
   backup_repo = Repo(cwd)
 
   print(Fore.BLUE, end='')
+
+  print('Pulling latest blog markdown articles')
+  build_repo.remote(name='origin').pull(refspec=f'refs/heads/{backup_branch}:refs/heads/{backup_branch}')
   
   print('Building site for production ready')
   exec('bundle exec jekyll build', debug=debug)
