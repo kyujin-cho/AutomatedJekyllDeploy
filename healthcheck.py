@@ -8,14 +8,22 @@ FALLBACK_ADDR=os.environ['BLOG_FALLBACK_ADDR']
 CF_API_KEY=os.environ['CF_API_KEY']
 CF_API_EMAIL=os.environ['CF_API_EMAIL']
 CF_ZONE_ID=os.environ['CF_ZONE_ID']
+HEALTHCHECK_URL=os.environ['HEALTHCHECK_URL']
+
+notify_telegram = False
+if 'TG_API_KEY' in os.environ.keys() and 'TG_USERID' in os.environ.keys():
+  notify_telegram = True
+  TG_API_KEY = os.environ['TG_API_KEY']
+  TG_USERID = os.environ['TG_USERID']
 
 mode = 'default'
 
 def health_check() -> bool:
   try:
-    requests.get(SERVER_ADDR)
+    res = requests.get(HEALTHCHECK_URL)
     return True
-  except:
+  except Exception as e:
+    print(e)
     return False
 
 def get_record(cf: CloudFlare.CloudFlare) -> str:
@@ -23,7 +31,15 @@ def get_record(cf: CloudFlare.CloudFlare) -> str:
     'name': BLOG_DOMAIN,
     'type': 'CNAME'
   })
-  return records.result[0].id, records.result[0].content
+  print(records[0])
+  return records[0]['id'], records[0]['content']
+
+def send_tg_message(mode: str):
+  msg_type = '꺼졌' if mode == 'fallback' else '돌아왔'
+  requests.post(f'https://api.telegram.org/bot{TG_API_KEY}/sendMessage', {
+    'chat_id': TG_USERID,
+    'text': f'{SERVER_ADDR} 서버가 {msg_type}어요.'
+  })
 
 def switch(mode: str):  
   cf = CloudFlare.CloudFlare()
@@ -35,10 +51,12 @@ def switch(mode: str):
     response = cf.zones.dns_records.put(CF_ZONE_ID, record_id, data={
       'type': 'CNAME', 
       'name': BLOG_DOMAIN,
-      'content': SERVER_ADDR if mode == 'fallback' else FALLBACK_ADDR,
+      'content': FALLBACK_ADDR if mode == 'fallback' else SERVER_ADDR,
       'proxied': False
     })
-  return response
+    if notify_telegram:
+      send_tg_message(mode)
+    print(response)
 
 def main():
   healthy = health_check()
