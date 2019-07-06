@@ -36,10 +36,11 @@ def get_record(cf: CloudFlare.CloudFlare) -> str:
 
 def send_tg_message(mode: str):
   msg_type = '꺼졌' if mode == 'fallback' else '돌아왔'
-  requests.post(f'https://api.telegram.org/bot{TG_API_KEY}/sendMessage', {
+  res = requests.post(f'https://api.telegram.org/bot{TG_API_KEY}/sendMessage', {
     'chat_id': TG_USERID,
     'text': f'{SERVER_ADDR} 서버가 {msg_type}어요.'
   })
+  print(res)
 
 def switch(mode: str):  
   cf = CloudFlare.CloudFlare()
