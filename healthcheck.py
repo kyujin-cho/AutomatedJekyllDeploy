@@ -33,6 +33,8 @@ def switch(mode: str):
     'content': SERVER_ADDR if mode == 'fallback' else FALLBACK_ADDR,
     'proxied': False
   })
+  with open('health.status', 'w') as fw:
+    fw.write(mode)
   return response
 
 def main():
