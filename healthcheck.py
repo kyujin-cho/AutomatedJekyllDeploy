@@ -18,28 +18,28 @@ def health_check() -> bool:
   except:
     return False
 
-def get_record_id(cf: CloudFlare.CloudFlare) -> str:
+def get_record(cf: CloudFlare.CloudFlare) -> str:
   records = cf.zones.dns_records.get(CF_ZONE_ID, params={
     'name': BLOG_DOMAIN,
     'type': 'CNAME'
   })
-  return records.result[0].id
+  return records.result[0].id, records.result[0].content
 
 def switch(mode: str):  
   cf = CloudFlare.CloudFlare()
-  response = cf.zones.dns_records.put(CF_ZONE_ID, get_record_id(cf), data={
-    'type': 'CNAME', 
-    'name': BLOG_DOMAIN,
-    'content': SERVER_ADDR if mode == 'fallback' else FALLBACK_ADDR,
-    'proxied': False
-  })
-  with open('health.status', 'w') as fw:
-    fw.write(mode)
+  record_id, current_domain = get_record(cf)
+  current_mode = 'fallback' if current_domain == FALLBACK_ADDR else 'default'
+  print('Current Mode:', current_mode)
+  if current_mode != mode:
+    print('Switching to', mode)
+    response = cf.zones.dns_records.put(CF_ZONE_ID, record_id, data={
+      'type': 'CNAME', 
+      'name': BLOG_DOMAIN,
+      'content': SERVER_ADDR if mode == 'fallback' else FALLBACK_ADDR,
+      'proxied': False
+    })
   return response
 
 def main():
   healthy = health_check()
-  if healthy and mode == 'fallback':
-    switch('default')
-  elif not healthy and mode == 'default':
-    switch('fallback')
+  switch('default' if healthy else 'fallback')
