@@ -1,6 +1,7 @@
 import os
 import requests
 import CloudFlare
+import time
 
 BLOG_DOMAIN=os.environ['BLOG_DOMAIN']
 SERVER_ADDR=os.environ['BLOG_SERVER_ADDR']
@@ -64,4 +65,6 @@ def main():
   switch('default' if healthy else 'fallback')
 
 if __name__ == '__main__':
+  while True: 
     main()
+    time.sleep(2)
